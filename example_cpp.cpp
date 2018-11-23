@@ -4,6 +4,8 @@
  *  C++ Example Code
  */
 
+#include <cstdlib>
+
 #include "source/libEqNibbler.hpp"
 
 using namespace std;
@@ -11,7 +13,11 @@ using namespace eqnibbler;
 
 int main(int argc, char const *argv[]) {
 
-  EquationNibbler* theEQ = new EquationNibbler();
+    EquationNibbler* theEQ = new EquationNibbler();
 
-  return 0;
+    vector<string> theVars{"x"};
+
+    theEQ->addEquation("sin(x)",theVars);
+
+    return 0;
 }

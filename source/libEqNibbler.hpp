@@ -5,16 +5,23 @@
  *  Loosely based on: http://www.codeproject.com/Articles/345888/How-to-write-a-simple-interpreter-in-JavaScript
  */
 
+#include "clsMath.hpp"
+
 namespace eqnibbler {
 
 class EquationNibbler {
 
-  public:
+    public:
 
-  EquationNibbler();
-  ~EquationNibbler();
+    EquationNibbler();
+    ~EquationNibbler();
 
-  private:
+    size_t   addEquation(string_t, vstring_t);
+    double_t evalEquation(int);
+
+    private:
+
+    std::vector<Math*> m_Eqs;
 
 };
 

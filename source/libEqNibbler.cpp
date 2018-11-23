@@ -18,3 +18,14 @@ EquationNibbler::~EquationNibbler() {
 
 }
 
+size_t EquationNibbler::addEquation(string_t sEquation, vstring_t vsVariable) {
+
+    m_Eqs.push_back(new Math());
+    size_t newEq = m_Eqs.size() - 1;
+
+    m_Eqs[newEq]->setEquation(sEquation);
+    m_Eqs[newEq]->setVariables(vsVariable);
+
+    return newEq;
+
+}

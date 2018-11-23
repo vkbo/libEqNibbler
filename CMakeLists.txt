@@ -18,6 +18,7 @@ option(FORTRAN_INTERFACE "Build Fortran interface" OFF)
 option(EXAMPLE_CPP       "Build example executable for C++" ON)
 option(EXAMPLE_FORTRAN   "Build example executable for Fortran" OFF)
 option(CRLIBM            "Use correctly rounded libmath instead of system libmath" OFF)
+option(DEBUG             "Show debugging output" OFF)
 
 # Build Options
 option(STATIC "Create a static library." OFF)
@@ -35,9 +36,16 @@ endif()
 set(EQN_SOURCES
   ${CMAKE_SOURCE_DIR}/source/libEqNibbler.hpp
   ${CMAKE_SOURCE_DIR}/source/libEqNibbler.cpp
+  ${CMAKE_SOURCE_DIR}/source/clsMath.hpp
+  ${CMAKE_SOURCE_DIR}/source/clsMath.cpp
 )
 
 # Configure Compiler
+if(STATIC)
+  set(BUILD_SHARED_LIBS OFF)
+endif()
+set(CMAKE_CXX_STANDARD 11)
+
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
   set(CMAKE_CXX_FLAGS         "-Wall")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -66,10 +74,6 @@ elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Intel")
   endif(NATIVE)
 else()
   message(FATAL_ERROR "Unkown compiler")
-endif()
-
-if(STATIC)
-  set(BUILD_SHARED_LIBS OFF)
 endif()
 
 if(STATIC)
