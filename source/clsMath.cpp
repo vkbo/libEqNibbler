@@ -67,7 +67,6 @@ bool Math::Eval(vdouble_t vdValues, double_t* pReturn) {
 
     vdouble_t vdStack;
     double_t  dValue;
-    bool      isValid;
 
 #ifdef DEBUG
     printf("DEBUG> Evaluating Equation\n");
@@ -136,47 +135,21 @@ bool Math::Eval(vdouble_t vdValues, double_t* pReturn) {
             break;
 
         case MP_MATH:
-            if(vdStack.size() >= 2) {
-                double_t dValR = vdStack.back(); vdStack.pop_back();
-                double_t dValL = vdStack.back(); vdStack.pop_back();
-                if(tItem.content == "+") {
-                    vdStack.push_back(dValL + dValR);
-                } else
-                if(tItem.content == "-") {
-                    vdStack.push_back(dValL - dValR);
-                } else
-                if(tItem.content == "*") {
-                    vdStack.push_back(dValL * dValR);
-                } else
-                if(tItem.content == "/") {
-                    vdStack.push_back(dValL / dValR);
-                } else
-                if(tItem.content == "^") {
-                    vdStack.push_back(pow(dValL,dValR));
-                } else {
-                    printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
-                    return false;
-                }
+            dValue = 0.0;
+            if(evalMath(tItem.content, false, &vdStack, &dValue)) {
+                vdStack.push_back(dValue);
             } else {
-                printf("Math Eval Error: Operator %s requires two expressions\n",tItem.content.c_str());
+                printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
                 return false;
             }
             break;
 
         case MP_UNARY:
-            if(vdStack.size() >= 1) {
-                double_t dVal = vdStack.back(); vdStack.pop_back();
-                if(tItem.content == "+") {
-                    vdStack.push_back(dVal);
-                } else
-                if(tItem.content == "-") {
-                    vdStack.push_back(-dVal);
-                } else {
-                    printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
-                    return false;
-                }
+            dValue = 0.0;
+            if(evalMath(tItem.content, true, &vdStack, &dValue)) {
+                vdStack.push_back(dValue);
             } else {
-                printf("Math Eval Error: Operator %s requires one expression\n",tItem.content.c_str());
+                printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
                 return false;
             }
             break;
@@ -249,7 +222,7 @@ bool Math::eqLexer() {
         // If a new type was encountered, push the previous onto the lexer
         if(idCurr != idPrev || idPrev == MT_SEPARATOR) {
             if(idPrev != MT_NONE) {
-                vTokens.push_back(token({idPrev, sBuffer, 0.0}));
+                vTokens.push_back(token({idPrev, sBuffer, 0.0, 0, 0}));
             }
             sBuffer = "";
         }
@@ -265,28 +238,215 @@ bool Math::eqLexer() {
     for(auto tItem : vTokens) {
 
         value_t  idType = MP_NONE;
+        value_t  idEval = EVAL_NONE;
+        value_t  nParms = 0;
         double_t dValue = 0.0;
 
         switch(tItem.type) {
         case MT_OPERATOR:
-            idType = validOperator(&tItem.content);
-            dValue = 0.0;
+            if(tItem.content == "+") {
+                idType = MP_MATH;
+                idEval = EVAL_MATH_PLUS;
+                nParms = 2;
+            } else
+            if(tItem.content == "-") {
+                idType = MP_MATH;
+                idEval = EVAL_MATH_MINUS;
+                nParms = 2;
+            } else
+            if(tItem.content == "*") {
+                idType = MP_MATH;
+                idEval = EVAL_MATH_MULT;
+                nParms = 2;
+            } else
+            if(tItem.content == "/") {
+                idType = MP_MATH;
+                idEval = EVAL_MATH_DIV;
+                nParms = 2;
+            } else
+            if(tItem.content == "^") {
+                idType = MP_MATH;
+                idEval = EVAL_MATH_POW;
+                nParms = 2;
+            } else
+            if(tItem.content == "&&") {
+                idType = MP_LOGICAL;
+                idEval = EVAL_LOGICAL_AND;
+                nParms = 2;
+            } else
+            if(tItem.content == "||") {
+                idType = MP_LOGICAL;
+                idEval = EVAL_LOGICAL_OR;
+                nParms = 2;
+            } else
+            if(tItem.content == "==") {
+                idType = MP_LOGICAL;
+                idEval = EVAL_LOGICAL_EQ;
+                nParms = 2;
+            } else
+            if(tItem.content == "!=") {
+                idType = MP_LOGICAL;
+                idEval = EVAL_LOGICAL_NE;
+                nParms = 2;
+            } else
+            if(tItem.content == "<") {
+                idType = MP_LOGICAL;
+                idEval = EVAL_LOGICAL_LT;
+                nParms = 2;
+            } else
+            if(tItem.content == ">") {
+                idType = MP_LOGICAL;
+                idEval = EVAL_LOGICAL_GT;
+                nParms = 2;
+            } else
+            if(tItem.content == "<=") {
+                idType = MP_LOGICAL;
+                idEval = EVAL_LOGICAL_LE;
+                nParms = 2;
+            } else
+            if(tItem.content == ">=") {
+                idType = MP_LOGICAL;
+                idEval = EVAL_LOGICAL_GE;
+                nParms = 2;
+            } else {
+                idType = MP_INVALID;
+                idEval = EVAL_NONE;
+                nParms = 0;
+            }
             break;
+
         case MT_UNARYOP:
-            idType = validUnary(&tItem.content);
-            dValue = 0.0;
+            if(tItem.content == "+") {
+                idType = MP_UNARY;
+                idEval = EVAL_UNARY_PLUS;
+                nParms = 2;
+            } else
+            if(tItem.content == "-") {
+                idType = MP_UNARY;
+                idEval = EVAL_UNARY_MINUS;
+                nParms = 2;
+            } else {
+                idType = MP_INVALID;
+                idEval = EVAL_NONE;
+                nParms = 0;
+            }
             break;
+
         case MT_NUMBER:
-            idType = validNumber(&tItem.content, &tItem.value);
-            dValue = tItem.value;
+            try {
+                dValue = stof(tItem.content);
+                idType = MP_NUMBER;
+                idEval = EVAL_NUMBER;
+                nParms = 0;
+            } catch(...) {
+                idType = MP_INVALID;
+                idEval = EVAL_NONE;
+                nParms = 0;
+            }
             break;
+
         case MT_WORD:
-            idType = validWord(&tItem.content);
-            dValue = 0.0;
+            if(tItem.content == "sin") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_SIN;
+                nParms = 1;
+            } else
+            if(tItem.content == "cos") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_COS;
+                nParms = 1;
+            } else
+            if(tItem.content == "tan") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_TAN;
+                nParms = 1;
+            } else
+            if(tItem.content == "asin") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_ASIN;
+                nParms = 1;
+            } else
+            if(tItem.content == "acos") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_ACOS;
+                nParms = 1;
+            } else
+            if(tItem.content == "atan") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_ATAN;
+                nParms = 1;
+            } else
+            if(tItem.content == "atan2") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_ATAN2;
+                nParms = 2;
+            } else
+            if(tItem.content == "exp") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_EXP;
+                nParms = 1;
+            } else
+            if(tItem.content == "log") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_LOG;
+                nParms = 1;
+            } else
+            if(tItem.content == "abs") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_ABS;
+                nParms = 1;
+            } else
+            if(tItem.content == "mod") {
+                idType = MP_FUNC;
+                idEval = EVAL_FUNC_MOD;
+                nParms = 2;
+            } else
+            if(tItem.content == "if") {
+                idType = MP_FUNC;
+                idEval = EVAL_SPECIAL_IF;
+                nParms = 3;
+            } else
+            if(tItem.content == "pi") {
+                idType = MP_CONST;
+                idEval = EVAL_NUMBER;
+                nParms = 0;
+                dValue = M_PI;
+            } else {
+                for(string_t sItem : m_WVariable) {
+                    if(sItem == tItem.content) {
+                        idType = MP_VARIABLE;
+                        idEval = EVAL_VARIABLE;
+                        nParms = 0;
+                    }
+                }
+                if(idType == MP_NONE) {
+                    idType = MP_INVALID;
+                    idEval = EVAL_NONE;
+                    nParms = 0;
+                }
+            }
             break;
+
         case MT_SEPARATOR:
-            idType = validSeparator(&tItem.content);
-            dValue = 0.0;
+            if(tItem.content == "(") {
+                idType = MP_LBRACK;
+                idEval = EVAL_NONE;
+                nParms = 0;
+            } else
+            if(tItem.content == ")") {
+                idType = MP_RBRACK;
+                idEval = EVAL_NONE;
+                nParms = 0;
+            } else
+            if(tItem.content == ",") {
+                idType = MP_COMMA;
+                idEval = EVAL_NONE;
+                nParms = 0;
+            } else {
+                idType = MP_INVALID;
+                idEval = EVAL_NONE;
+                nParms = 0;
+            }
             break;
         }
 
@@ -294,7 +454,7 @@ bool Math::eqLexer() {
             printf("Math Error: Cannot parse token '%s'\n", tItem.content.c_str());
             return false;
         } else {
-            m_Tokens.push_back(token({idType, tItem.content, dValue}));
+            m_Tokens.push_back(token({idType, tItem.content, dValue, 0}));
         }
 
         idPrev = idType;
@@ -307,7 +467,7 @@ bool Math::eqLexer() {
     }
 
     // Add end token
-    m_Tokens.push_back(token({MP_END, "end", 0.0}));
+    m_Tokens.push_back(token({MP_END, "end", 0.0, EVAL_END, 0}));
 
 #ifdef DEBUG
     // Echo lexer for debug
@@ -563,31 +723,6 @@ bool Math::eqParser() {
 // ****************************************************************************************************************************** //
 
 /**
- *  Function :: validOperator
- * ===========================
- *  Checks if string is a valid operator, and returns its type
- */
-
-value_t Math::validOperator(string_t* pVar) {
-
-    for(string_t sItem : m_OMath) {
-        if(sItem == *pVar) {
-            return MP_MATH;
-        }
-    }
-
-    for(string_t sItem : m_OLogical) {
-        if(sItem == *pVar) {
-            return MP_LOGICAL;
-        }
-    }
-
-    return MP_INVALID;
-}
-
-// ****************************************************************************************************************************** //
-
-/**
  *  Function :: validUnary
  * ===========================
  *  Checks if string is a valid unary operator, and returns its type
@@ -620,11 +755,11 @@ value_t Math::validWord(string_t* pVar) {
         }
     }
 
-    for(string_t sItem : m_WFunc) {
-        if(sItem == *pVar) {
-            return MP_FUNC;
-        }
-    }
+    // for(string_t sItem : m_WFunc) {
+    //     if(sItem == *pVar) {
+    //         return MP_FUNC;
+    //     }
+    // }
 
     for(string_t sItem : m_WConst) {
         if(sItem == *pVar) {
@@ -968,6 +1103,69 @@ bool Math::evalLogical(string_t sVariable, vdouble_t* pStack, double_t* pReturn)
             *pReturn = EVAL_FALSE;
         }
         isValid = true;
+    }
+
+    return isValid;
+}
+
+// ****************************************************************************************************************************** //
+
+/**
+ *  Function :: evalMath
+ * ======================
+ *  Evaluate math operator
+ */
+
+bool Math::evalMath(string_t sVariable, bool isUnary, vdouble_t* pStack, double_t* pReturn) {
+
+    bool isValid = false;
+
+    if(sVariable == "+" && isUnary) {
+        if(pStack->size() < 1) return false;
+        double_t dVal  = pStack->back(); pStack->pop_back();
+        *pReturn       = dVal;
+        isValid        = true;
+    } else
+    if(sVariable == "-" && isUnary) {
+        if(pStack->size() < 1) return false;
+        double_t dVal  = pStack->back(); pStack->pop_back();
+        *pReturn       = -dVal;
+        isValid        = true;
+    } else
+    if(sVariable == "+" && !isUnary) {
+        if(pStack->size() < 2) return false;
+        double_t dValR = pStack->back(); pStack->pop_back();
+        double_t dValL = pStack->back(); pStack->pop_back();
+        *pReturn       = dValL + dValR;
+        isValid        = true;
+    } else
+    if(sVariable == "-" && !isUnary) {
+        if(pStack->size() < 2) return false;
+        double_t dValR = pStack->back(); pStack->pop_back();
+        double_t dValL = pStack->back(); pStack->pop_back();
+        *pReturn       = dValL - dValR;
+        isValid        = true;
+    } else
+    if(sVariable == "*") {
+        if(pStack->size() < 2) return false;
+        double_t dValR = pStack->back(); pStack->pop_back();
+        double_t dValL = pStack->back(); pStack->pop_back();
+        *pReturn       = dValL * dValR;
+        isValid        = true;
+    } else
+    if(sVariable == "/") {
+        if(pStack->size() < 2) return false;
+        double_t dValR = pStack->back(); pStack->pop_back();
+        double_t dValL = pStack->back(); pStack->pop_back();
+        *pReturn       = dValL / dValR;
+        isValid        = true;
+    } else
+    if(sVariable == "^") {
+        if(pStack->size() < 2) return false;
+        double_t dValR = pStack->back(); pStack->pop_back();
+        double_t dValL = pStack->back(); pStack->pop_back();
+        *pReturn       = pow(dValL,dValR);
+        isValid        = true;
     }
 
     return isValid;
