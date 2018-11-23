@@ -17,7 +17,7 @@ class EquationNibbler {
     ~EquationNibbler();
 
     size_t   addEquation(string_t, vstring_t);
-    double_t evalEquation(int);
+    double_t evalEquation(size_t, vdouble_t);
 
     private:
 

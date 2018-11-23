@@ -128,7 +128,17 @@ bool Math::Eval(vdouble_t vdValues, double_t* pReturn) {
 
             case MP_MATH:
                 dValue = 0.0;
-                if(evalMath(tItem.content, &vdStack, &dValue)) {
+                if(evalMath(tItem.content, false, &vdStack, &dValue)) {
+                    vdStack.push_back(dValue);
+                } else {
+                    printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
+                    return false;
+                }
+                break;
+
+            case MP_UNARY:
+                dValue = 0.0;
+                if(evalMath(tItem.content, true, &vdStack, &dValue)) {
                     vdStack.push_back(dValue);
                 } else {
                     printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
@@ -137,13 +147,14 @@ bool Math::Eval(vdouble_t vdValues, double_t* pReturn) {
                 break;
         }
 
-        // cout << "  Stack: ";
-        // for(auto dValue : vdStack) {
-        //     cout << dValue << " ";
-        // }
-        // cout << "| Current: " << tItem.content << endl;
+#ifdef DEBUG
+        printf("DEBUG> Stack: ");
+        for(auto dValue : vdStack) {
+            printf("%10.3e | ", dValue);
+        }
+        printf("<< '%s'\n", tItem.content.c_str());
+#endif
     }
-    // cout << endl;
 
     *pReturn = vdStack.front();
 
@@ -166,6 +177,11 @@ bool Math::eqLexer() {
     string_t      sBuffer = "";
     vector<token> vTokens;
 
+#ifdef DEBUG
+    printf("DEBUG> Calling Lexer\n");
+    printf("DEBUG>  * Equation: '%s'\n", m_Equation.c_str());
+#endif
+
     for(char cCurr : m_Equation) {
 
         // Get specific type
@@ -183,7 +199,7 @@ bool Math::eqLexer() {
             idCurr = MT_NUMBER;
         }
         // '-' after an 'e' or 'd' that is a number, is also a part of a number
-        if(cCurr == '-' && (cPrev == 'd' || cPrev == 'e') && idPrev == MT_NUMBER) {
+        if((cCurr == '-' || cCurr == '+') && (cPrev == 'd' || cPrev == 'e') && idPrev == MT_NUMBER) {
             idCurr = MT_NUMBER;
         }
         // Check if operator is actually a separataor
@@ -191,9 +207,8 @@ bool Math::eqLexer() {
             idCurr = MT_SEPARATOR;
         }
         // Check if unary minus
-        if( cCurr == '-' &&
-            !(idPrev == MT_NUMBER || idPrev == MT_WORD || (idPrev == MT_NONE && cPrev != '#')) ) {
-            cCurr = '_';
+        if((cCurr == '-' || cCurr == '+') && !(idPrev == MT_NUMBER || idPrev == MT_WORD || (idPrev == MT_NONE && cPrev != '#'))) {
+            idCurr = MT_UNARYOP;
         }
 
         // If a new type was encountered, push the previous onto the lexer
@@ -220,6 +235,10 @@ bool Math::eqLexer() {
         switch(tItem.type) {
             case MT_OPERATOR:
                 idType = validOperator(&tItem.content);
+                dValue = 0.0;
+                break;
+            case MT_UNARYOP:
+                idType = validUnary(&tItem.content);
                 dValue = 0.0;
                 break;
             case MT_NUMBER:
@@ -250,12 +269,18 @@ bool Math::eqLexer() {
     // Add end token
     m_Tokens.push_back(token({MP_END, "end", 0.0}));
 
+#ifdef DEBUG
     // Echo lexer for debug
-    // cout << endl;
-    // for(auto tItem : m_Tokens) {
-    //     cout << "  Type " << tItem.type << " : Content " << tItem.content << " : Value " << tItem.value << endl;
-    // }
-    // cout << endl;
+    printf("DEBUG> End of Lexer\n");
+    size_t lIdx = 0;
+    for(auto tItem : m_Tokens) {
+        lIdx++;
+        printf("DEBUG>  * Item %2d : ", int(lIdx));
+        printf("Type = %2d, ",          tItem.type);
+        printf("Value = %23.16e, ",     tItem.value);
+        printf("Content = '%s'\n",      tItem.content.c_str());
+    }
+#endif
 
     return true;
 }
@@ -273,6 +298,11 @@ bool Math::eqParser() {
 
     vector<token> vtOutput;
     vector<token> vtStack;
+
+#ifdef DEBUG
+    printf("DEBUG> Calling Parser using Shunting-Yard Algorithm\n");
+    uint32_t nStep = 0;
+#endif
 
     for(auto tItem : m_Tokens) {
 
@@ -327,10 +357,33 @@ bool Math::eqParser() {
             case MP_MATH:
                 iErase = 0;
 
-                precedenceMath(tItem.content,&itemPrec,&itemAssoc);
+                precedenceMath(tItem.content,false,&itemPrec,&itemAssoc);
                 for(auto tStack : vtStack) {
-                    precedenceMath(tStack.content,&stackPrec,&stackAssoc);
-                    if( tStack.type == MP_MATH &&
+                    precedenceMath(tStack.content,false,&stackPrec,&stackAssoc);
+                    if( (tStack.type == MP_MATH || tStack.type == MP_UNARY) &&
+                        ( (itemAssoc == ASSOC_L && itemPrec <= stackPrec) ||
+                          (itemAssoc == ASSOC_R && itemPrec <  stackPrec) ) ) {
+                        vtOutput.push_back(tStack);
+                        iErase++;
+                    } else {
+                        break;
+                    }
+                }
+
+                if(iErase > 0) {
+                    vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
+                }
+                vtStack.insert(vtStack.begin(), tItem);
+
+                break;
+
+            case MP_UNARY:
+                iErase = 0;
+
+                precedenceMath(tItem.content,true,&itemPrec,&itemAssoc);
+                for(auto tStack : vtStack) {
+                    precedenceMath(tStack.content,true,&stackPrec,&stackAssoc);
+                    if( (tStack.type == MP_MATH || tStack.type == MP_UNARY) &&
                         ( (itemAssoc == ASSOC_L && itemPrec <= stackPrec) ||
                           (itemAssoc == ASSOC_R && itemPrec <  stackPrec) ) ) {
                         vtOutput.push_back(tStack);
@@ -425,31 +478,41 @@ bool Math::eqParser() {
                 vtOutput.push_back(tItem);
                 m_ParseTree = vtOutput;
 
-                // cout << "  Output: ";
-                // for(auto tTemp : vtOutput) {
-                //     cout << tTemp.content << " ";
-                // }
-                // cout << "| Stack: ";
-                // for(auto tTemp : vtStack) {
-                //     cout << tTemp.content << " ";
-                // }
-                // cout << "| Current: " << tItem.content;
-                // cout << endl;
+#ifdef DEBUG
+                nStep++;
+                printf("DEBUG> Step %d\n", nStep);
+                printf("DEBUG>  * Current : %s\n", tItem.content.c_str());
+                printf("DEBUG>  * Stack   : ");
+                for(auto tTemp : vtStack) {
+                    printf("%s  ",tTemp.content.c_str());
+                }
+                printf("\n");
+                printf("DEBUG>  * Output  : ");
+                for(auto tTemp : vtOutput) {
+                    printf("%s  ",tTemp.content.c_str());
+                }
+                printf("\n");
+#endif
 
                 return true;
                 break;
         }
 
-        // cout << "  Output: ";
-        // for(auto tTemp : vtOutput) {
-        //     cout << tTemp.content << " ";
-        // }
-        // cout << "| Stack: ";
-        // for(auto tTemp : vtStack) {
-        //     cout << tTemp.content << " ";
-        // }
-        // cout << "| Current: " << tItem.content;
-        // cout << endl;
+#ifdef DEBUG
+        nStep++;
+        printf("DEBUG> Step %d\n", nStep);
+        printf("DEBUG>  * Current : %s\n", tItem.content.c_str());
+        printf("DEBUG>  * Stack   : ");
+        for(auto tTemp : vtStack) {
+            printf("%s  ",tTemp.content.c_str());
+        }
+        printf("\n");
+        printf("DEBUG>  * Output  : ");
+        for(auto tTemp : vtOutput) {
+            printf("%s  ",tTemp.content.c_str());
+        }
+        printf("\n");
+#endif
     }
 
     return false;
@@ -474,6 +537,25 @@ value_t Math::validOperator(string_t* pVar) {
     for(string_t sItem : m_OLogical) {
         if(sItem == *pVar) {
             return MP_LOGICAL;
+        }
+    }
+
+    return MP_INVALID;
+}
+
+// ****************************************************************************************************************************** //
+
+/**
+ *  Function :: validUnary
+ * ===========================
+ *  Checks if string is a valid unary operator, and returns its type
+ */
+
+value_t Math::validUnary(string_t* pVar) {
+
+    for(string_t sItem : m_OUnary) {
+        if(sItem == *pVar) {
+            return MP_UNARY;
         }
     }
 
@@ -613,14 +695,10 @@ void Math::precedenceLogical(string_t sOperator, int32_t* pPrecedence, int32_t* 
  *  Returns precedence and associativity of operator
  */
 
-void Math::precedenceMath(string_t sOperator, int32_t* pPrecedence, int32_t* pAssoc) {
+void Math::precedenceMath(string_t sOperator, bool isUnary, int32_t* pPrecedence, int32_t* pAssoc) {
 
     if(sOperator == "^") {
         *pPrecedence = 5;
-        *pAssoc = ASSOC_R;
-    } else
-    if(sOperator == "_") {
-        *pPrecedence = 4;
         *pAssoc = ASSOC_R;
     } else
     if(sOperator == "*") {
@@ -632,12 +710,22 @@ void Math::precedenceMath(string_t sOperator, int32_t* pPrecedence, int32_t* pAs
         *pAssoc = ASSOC_L;
     } else
     if(sOperator == "+") {
-        *pPrecedence = 2;
-        *pAssoc = ASSOC_L;
+        if(isUnary) {
+            *pPrecedence = 4;
+            *pAssoc = ASSOC_R;
+        } else {
+            *pPrecedence = 2;
+            *pAssoc = ASSOC_L;
+        }
     } else
     if(sOperator == "-") {
-        *pPrecedence = 2;
-        *pAssoc = ASSOC_L;
+        if(isUnary) {
+            *pPrecedence = 4;
+            *pAssoc = ASSOC_R;
+        } else {
+            *pPrecedence = 2;
+            *pAssoc = ASSOC_L;
+        }
     }
 
     return;
@@ -851,24 +939,30 @@ bool Math::evalLogical(string_t sVariable, vdouble_t* pStack, double_t* pReturn)
  *  Evaluate math operator
  */
 
-bool Math::evalMath(string_t sVariable, vdouble_t* pStack, double_t* pReturn) {
+bool Math::evalMath(string_t sVariable, bool isUnary, vdouble_t* pStack, double_t* pReturn) {
 
     bool isValid = false;
 
-    if(sVariable == "_") {
+    if(sVariable == "+" && isUnary) {
+        if(pStack->size() < 1) return false;
+        double_t dVal  = pStack->back(); pStack->pop_back();
+        *pReturn       = dVal;
+        isValid        = true;
+    } else
+    if(sVariable == "-" && isUnary) {
         if(pStack->size() < 1) return false;
         double_t dVal  = pStack->back(); pStack->pop_back();
         *pReturn       = -dVal;
         isValid        = true;
     } else
-    if(sVariable == "+") {
+    if(sVariable == "+" && !isUnary) {
         if(pStack->size() < 2) return false;
         double_t dValR = pStack->back(); pStack->pop_back();
         double_t dValL = pStack->back(); pStack->pop_back();
         *pReturn       = dValL + dValR;
         isValid        = true;
     } else
-    if(sVariable == "-") {
+    if(sVariable == "-" && !isUnary) {
         if(pStack->size() < 2) return false;
         double_t dValR = pStack->back(); pStack->pop_back();
         double_t dValL = pStack->back(); pStack->pop_back();

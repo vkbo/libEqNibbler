@@ -23,9 +23,15 @@ size_t EquationNibbler::addEquation(string_t sEquation, vstring_t vsVariable) {
     m_Eqs.push_back(new Math());
     size_t newEq = m_Eqs.size() - 1;
 
-    m_Eqs[newEq]->setEquation(sEquation);
     m_Eqs[newEq]->setVariables(vsVariable);
+    m_Eqs[newEq]->setEquation(sEquation);
 
     return newEq;
 
+}
+
+double_t EquationNibbler::evalEquation(size_t idEQ, vdouble_t vdValues) {
+    double_t eqResult;
+    m_Eqs[idEQ]->Eval(vdValues, &eqResult);
+    return eqResult;
 }
