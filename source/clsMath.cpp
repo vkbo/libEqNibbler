@@ -17,16 +17,19 @@ using namespace eqnibbler;
 
 bool Math::setVariables(vstring_t vsVariable) {
 
-    bool notUnique = false;
+    bool isReserved = false;
 
     for(auto sItem : vsVariable) {
-        if(validWord(&sItem) != MP_INVALID) {
-            notUnique = true;
+        if( sItem == "pi"   || sItem == "sin"   || sItem == "cos"  ||
+            sItem == "tan"  || sItem == "asin"  || sItem == "acos" ||
+            sItem == "atan" || sItem == "atan2" || sItem == "exp"  ||
+            sItem == "log"  || sItem == "abs"   || sItem == "mod"  ) {
+            isReserved = true;
         }
     }
-    if(!notUnique) m_WVariable = vsVariable;
+    if(!isReserved) m_WVariable = vsVariable;
 
-    return !notUnique;
+    return !isReserved;
 }
 
 // ****************************************************************************************************************************** //
@@ -66,7 +69,12 @@ bool Math::setEquation(string_t sEquation) {
 bool Math::Eval(vdouble_t vdValues, double_t* pReturn) {
 
     vdouble_t vdStack;
-    double_t  dValue;
+    size_t    iPos;
+    bool      valFound;
+
+    double_t  dVal;
+    double_t  dValL;
+    double_t  dValR;
 
 #ifdef DEBUG
     printf("DEBUG> Evaluating Equation\n");
@@ -88,71 +96,175 @@ bool Math::Eval(vdouble_t vdValues, double_t* pReturn) {
 
     for(auto tItem : m_ParseTree) {
 
-        switch(tItem.type) {
-
-        case MP_NUMBER:
-            vdStack.push_back(tItem.value);
-            break;
-
-        case MP_VARIABLE:
-            dValue = 0.0;
-            if(evalVariable(tItem.content, &vdValues, &dValue)) {
-                vdStack.push_back(dValue);
+        if(tItem.size == 0) {
+            if(tItem.eval == EVAL_NUMBER) {
+                vdStack.push_back(tItem.value);
+            } else
+            if(tItem.eval == EVAL_VARIABLE) {
+                iPos     = 0;
+                valFound = false;
+                for(auto sItem : m_WVariable) {
+                    if(sItem == tItem.content) {
+                        vdStack.push_back(vdValues.at(iPos));
+                        valFound = true;
+                        break;
+                    }
+                    iPos++;
+                }
+                if(!valFound) {
+                    printf("Math Eval Error: Unknown variable %s\n",tItem.content.c_str());
+                    return false;
+                }
+            } else
+            if(tItem.eval == EVAL_END) {
+                break;
             } else {
-                printf("Math Eval Error: Unknown variable %s\n",tItem.content.c_str());
+                printf("Math Eval Error: Unknown error in size = 0, content = '%s'\n", tItem.content.c_str());
                 return false;
             }
-            break;
-
-        case MP_CONST:
-            dValue = 0.0;
-            if(evalConstant(tItem.content, &dValue)) {
-                vdStack.push_back(dValue);
+        } else
+        if(tItem.size == 1) {
+            dVal = vdStack.back(); vdStack.pop_back();
+            if(tItem.eval == EVAL_UNARY_PLUS) {
+                vdStack.push_back(dVal);
+            } else
+            if(tItem.eval == EVAL_UNARY_MINUS) {
+                vdStack.push_back(-dVal);
+            } else
+            if(tItem.eval == EVAL_FUNC_SIN) {
+                vdStack.push_back(sin(dVal));
+            } else
+            if(tItem.eval == EVAL_FUNC_COS) {
+                vdStack.push_back(cos(dVal));
+            } else
+            if(tItem.eval == EVAL_FUNC_TAN) {
+                vdStack.push_back(tan(dVal));
+            } else
+            if(tItem.eval == EVAL_FUNC_ASIN) {
+                vdStack.push_back(asin(dVal));
+            } else
+            if(tItem.eval == EVAL_FUNC_ACOS) {
+                vdStack.push_back(acos(dVal));
+            } else
+            if(tItem.eval == EVAL_FUNC_ATAN) {
+                vdStack.push_back(atan(dVal));
+            } else
+            if(tItem.eval == EVAL_FUNC_EXP) {
+                vdStack.push_back(exp(dVal));
+            } else
+            if(tItem.eval == EVAL_FUNC_LOG) {
+                vdStack.push_back(log(dVal));
+            } else
+            if(tItem.eval == EVAL_FUNC_ABS) {
+                vdStack.push_back(abs(dVal));
             } else {
-                printf("Math Eval Error: Unknown constant %s\n",tItem.content.c_str());
+                printf("Math Eval Error: Unknown error in size = 1, content = '%s'\n", tItem.content.c_str());
                 return false;
             }
-            break;
-
-        case MP_FUNC:
-            dValue = 0.0;
-            if(evalFunction(tItem.content, &vdStack, &dValue)) {
-                vdStack.push_back(dValue);
+        }
+        if(tItem.size == 2) {
+            dValR = vdStack.back(); vdStack.pop_back();
+            dValL = vdStack.back(); vdStack.pop_back();
+            if(tItem.eval == EVAL_MATH_PLUS) {
+                vdStack.push_back(dValL + dValR);
+            } else
+            if(tItem.eval == EVAL_MATH_MINUS) {
+                vdStack.push_back(dValL - dValR);
+            } else
+            if(tItem.eval == EVAL_MATH_MULT) {
+                vdStack.push_back(dValL * dValR);
+            } else
+            if(tItem.eval == EVAL_MATH_DIV) {
+                vdStack.push_back(dValL / dValR);
+            } else
+            if(tItem.eval == EVAL_MATH_POW) {
+                vdStack.push_back(pow(dValL,dValR));
+            } else
+            if(tItem.eval == EVAL_FUNC_ATAN2) {
+                vdStack.push_back(atan2(dValL,dValR));
+            } else
+            if(tItem.eval == EVAL_FUNC_MOD) {
+                if(dValL == floor(dValL) && dValR == floor(dValR)) {
+                    vdStack.push_back((int)floor(dValL)%(int)floor(dValR));
+                } else {
+                    printf("Math Eval Error: Function mod() requires integer values\n");
+                    return false;
+                }
+            } else
+            if(tItem.eval == EVAL_LOGICAL_AND) {
+                if(dValL && dValR) {
+                    vdStack.push_back(EVAL_TRUE);
+                } else {
+                    vdStack.push_back(EVAL_FALSE);
+                }
+            } else
+            if(tItem.eval == EVAL_LOGICAL_OR) {
+                if(dValL || dValR) {
+                    vdStack.push_back(EVAL_TRUE);
+                } else {
+                    vdStack.push_back(EVAL_FALSE);
+                }
+            } else
+            if(tItem.eval == EVAL_LOGICAL_EQ) {
+                if(dValL == dValR) {
+                    vdStack.push_back(EVAL_TRUE);
+                } else {
+                    vdStack.push_back(EVAL_FALSE);
+                }
+            } else
+            if(tItem.eval == EVAL_LOGICAL_NE) {
+                if(dValL != dValR) {
+                    vdStack.push_back(EVAL_TRUE);
+                } else {
+                    vdStack.push_back(EVAL_FALSE);
+                }
+            } else
+            if(tItem.eval == EVAL_LOGICAL_LT) {
+                if(dValL < dValR) {
+                    vdStack.push_back(EVAL_TRUE);
+                } else {
+                    vdStack.push_back(EVAL_FALSE);
+                }
+            } else
+            if(tItem.eval == EVAL_LOGICAL_GT) {
+                if(dValL > dValR) {
+                    vdStack.push_back(EVAL_TRUE);
+                } else {
+                    vdStack.push_back(EVAL_FALSE);
+                }
+            } else
+            if(tItem.eval == EVAL_LOGICAL_LE) {
+                if(dValL <= dValR) {
+                    vdStack.push_back(EVAL_TRUE);
+                } else {
+                    vdStack.push_back(EVAL_FALSE);
+                }
+            } else
+            if(tItem.eval == EVAL_LOGICAL_GE) {
+                if(dValL >= dValR) {
+                    vdStack.push_back(EVAL_TRUE);
+                } else {
+                    vdStack.push_back(EVAL_FALSE);
+                }
             } else {
-                printf("Math Eval Error: Unknown function %s\n",tItem.content.c_str());
+                printf("Math Eval Error: Unknown error in size = 2, content = '%s'\n", tItem.content.c_str());
                 return false;
             }
-            break;
-
-        case MP_LOGICAL:
-            dValue = 0.0;
-            if(evalLogical(tItem.content, &vdStack, &dValue)) {
-                vdStack.push_back(dValue);
+        } else
+        if(tItem.size == 3) {
+            dValR = vdStack.back(); vdStack.pop_back();
+            dValL = vdStack.back(); vdStack.pop_back();
+            dVal  = vdStack.back(); vdStack.pop_back();
+            if(tItem.eval == EVAL_SPECIAL_IF) {
+                if(dVal == EVAL_TRUE) {
+                    vdStack.push_back(dValL);
+                } else {
+                    vdStack.push_back(dValR);
+                }
             } else {
-                printf("Math Eval Error: Unknown logic operator %s\n",tItem.content.c_str());
+                printf("Math Eval Error: Unknown error in size = 3, content = '%s'\n", tItem.content.c_str());
                 return false;
             }
-            break;
-
-        case MP_MATH:
-            dValue = 0.0;
-            if(evalMath(tItem.content, false, &vdStack, &dValue)) {
-                vdStack.push_back(dValue);
-            } else {
-                printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
-                return false;
-            }
-            break;
-
-        case MP_UNARY:
-            dValue = 0.0;
-            if(evalMath(tItem.content, true, &vdStack, &dValue)) {
-                vdStack.push_back(dValue);
-            } else {
-                printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
-                return false;
-            }
-            break;
         }
 
 #ifdef DEBUG
@@ -319,12 +431,12 @@ bool Math::eqLexer() {
             if(tItem.content == "+") {
                 idType = MP_UNARY;
                 idEval = EVAL_UNARY_PLUS;
-                nParms = 2;
+                nParms = 1;
             } else
             if(tItem.content == "-") {
                 idType = MP_UNARY;
                 idEval = EVAL_UNARY_MINUS;
-                nParms = 2;
+                nParms = 1;
             } else {
                 idType = MP_INVALID;
                 idEval = EVAL_NONE;
@@ -454,7 +566,7 @@ bool Math::eqLexer() {
             printf("Math Error: Cannot parse token '%s'\n", tItem.content.c_str());
             return false;
         } else {
-            m_Tokens.push_back(token({idType, tItem.content, dValue, 0}));
+            m_Tokens.push_back(token({idType, tItem.content, dValue, idEval, nParms}));
         }
 
         idPrev = idType;
@@ -476,7 +588,8 @@ bool Math::eqLexer() {
     for(auto tItem : m_Tokens) {
         lIdx++;
         printf("DEBUG>  * Item %2d : ", int(lIdx));
-        printf("Type = %2d, ",          tItem.type);
+        printf("Type = %2d, ",          tItem.eval);
+        printf("Size = %1d, ",          tItem.size);
         printf("Value = %23.16e, ",     tItem.value);
         printf("Content = '%s'\n",      tItem.content.c_str());
     }
@@ -723,100 +836,6 @@ bool Math::eqParser() {
 // ****************************************************************************************************************************** //
 
 /**
- *  Function :: validUnary
- * ===========================
- *  Checks if string is a valid unary operator, and returns its type
- */
-
-value_t Math::validUnary(string_t* pVar) {
-
-    for(string_t sItem : m_OUnary) {
-        if(sItem == *pVar) {
-            return MP_UNARY;
-        }
-    }
-
-    return MP_INVALID;
-}
-
-// ****************************************************************************************************************************** //
-
-/**
- *  Function :: validWord
- * =======================
- *  Checks if string is a valid word, and returns its type
- */
-
-value_t Math::validWord(string_t* pVar) {
-
-    for(string_t sItem : m_WVariable) {
-        if(sItem == *pVar) {
-            return MP_VARIABLE;
-        }
-    }
-
-    // for(string_t sItem : m_WFunc) {
-    //     if(sItem == *pVar) {
-    //         return MP_FUNC;
-    //     }
-    // }
-
-    for(string_t sItem : m_WConst) {
-        if(sItem == *pVar) {
-            return MP_CONST;
-        }
-    }
-
-    return MP_INVALID;
-}
-
-// ****************************************************************************************************************************** //
-
-/**
- *  Function :: validNumber
- * =========================
- *  Checks if string is a valid number, and returns its type
- */
-
-value_t Math::validNumber(string_t* pVar, double* pValue) {
-
-    try {
-        *pValue = stof(*pVar);
-        return MP_NUMBER;
-    } catch(...) {
-        *pValue = 0.0;
-        return MP_INVALID;
-    }
-}
-
-// ****************************************************************************************************************************** //
-
-/**
- *  Function :: validSeparator
- * ============================
- *  Checks if string is a valid separataor, and returns its type
- */
-
-value_t Math::validSeparator(string_t* pVar) {
-
-    if(*pVar == "(") {
-        return MP_LBRACK;
-    }
-
-    if(*pVar == ")") {
-        return MP_RBRACK;
-    }
-
-    if(*pVar == ",") {
-        return MP_COMMA;
-    }
-
-    return MP_INVALID;
-}
-
-// ****************************************************************************************************************************** //
-
-/**
  *  Function :: precedenceLogical
  * ===============================
  *  Returns precedence and associativity of operator
@@ -906,269 +925,6 @@ void Math::precedenceMath(string_t sOperator, bool isUnary, int32_t* pPrecedence
     }
 
     return;
-}
-
-// ****************************************************************************************************************************** //
-
-/**
- *  Function :: evalVariable
- * ==========================
- *  Evaluate input variable set by setVariables()
- */
-
-bool Math::evalVariable(string_t sVariable, vdouble_t* pValues, double_t* pReturn) {
-
-    size_t iPos = 0;
-
-    for(auto sItem : m_WVariable) {
-        if(sItem == sVariable) {
-            *pReturn = pValues->at(iPos);
-            return true;
-        }
-        iPos++;
-    }
-
-    return false;
-}
-
-// ****************************************************************************************************************************** //
-
-/**
- *  Function :: evalConstant
- * ==========================
- *  Evaluate constant
- */
-
-bool Math::evalConstant(string_t sVariable, double_t* pReturn) {
-
-    if(sVariable == "pi") {
-        *pReturn = M_PI;
-        return true;
-    }
-
-    return false;
-}
-
-// ****************************************************************************************************************************** //
-
-/**
- *  Function :: evalFunction
- * ==========================
- *  Evaluate math function
- */
-
-bool Math::evalFunction(string_t sVariable, vdouble_t* pStack, double_t* pReturn) {
-
-    if(pStack->size() < 1) return false;
-
-    bool isValid = false;
-
-    if(sVariable == "sin") {
-        *pReturn = sin(pStack->back());
-        pStack->pop_back();
-        isValid = true;
-    } else
-    if(sVariable == "cos") {
-        *pReturn = cos(pStack->back());
-        pStack->pop_back();
-        isValid = true;
-    } else
-    if(sVariable == "tan") {
-        *pReturn = tan(pStack->back());
-        pStack->pop_back();
-        isValid = true;
-    } else
-    if(sVariable == "exp") {
-        *pReturn = exp(pStack->back());
-        pStack->pop_back();
-        isValid = true;
-    } else
-    if(sVariable == "log") {
-        *pReturn = log(pStack->back());
-        pStack->pop_back();
-        isValid = true;
-    } else
-    if(sVariable == "mod") {
-
-        if(pStack->size() < 2) return false;
-
-        double_t dValL = pStack->back(); pStack->pop_back();
-        double_t dValR = pStack->back(); pStack->pop_back();
-
-        if(dValL == floor(dValL) && dValR == floor(dValR)) {
-            *pReturn = (int)floor(dValL)%(int)floor(dValR);
-            isValid = true;
-        } else {
-            isValid = false;
-        }
-    } else
-    if(sVariable == "if") {
-
-        if(pStack->size() < 3) return false;
-
-        double_t dFalse = pStack->back(); pStack->pop_back();
-        double_t dTrue  = pStack->back(); pStack->pop_back();
-        double_t dBool  = pStack->back(); pStack->pop_back();
-
-        if(dBool == EVAL_TRUE) {
-            *pReturn = dTrue;
-        } else {
-            *pReturn = dFalse;
-        }
-
-        isValid = true;
-    }
-
-    return isValid;
-}
-
-// ****************************************************************************************************************************** //
-
-/**
- *  Function :: evalLogical
- * =========================
- *  Evaluate logic operator
- */
-
-bool Math::evalLogical(string_t sVariable, vdouble_t* pStack, double_t* pReturn) {
-
-    if(pStack->size() < 2) {
-        return false;
-    }
-
-    bool     isValid = false;
-    double_t dValR   = pStack->back(); pStack->pop_back();
-    double_t dValL   = pStack->back(); pStack->pop_back();
-
-    if(sVariable == "&&") {
-        if(dValL && dValR) {
-            *pReturn = EVAL_TRUE;
-        } else {
-            *pReturn = EVAL_FALSE;
-        }
-        isValid = true;
-    } else
-    if(sVariable == "||") {
-        if(dValL || dValR) {
-            *pReturn = EVAL_TRUE;
-        } else {
-            *pReturn = EVAL_FALSE;
-        }
-        isValid = true;
-    } else
-    if(sVariable == "==") {
-        if(dValL == dValR) {
-            *pReturn = EVAL_TRUE;
-        } else {
-            *pReturn = EVAL_FALSE;
-        }
-        isValid = true;
-    } else
-    if(sVariable == "<") {
-        if(dValL < dValR) {
-            *pReturn = EVAL_TRUE;
-        } else {
-            *pReturn = EVAL_FALSE;
-        }
-        isValid = true;
-    } else
-    if(sVariable == ">") {
-        if(dValL > dValR) {
-            *pReturn = EVAL_TRUE;
-        } else {
-            *pReturn = EVAL_FALSE;
-        }
-        isValid = true;
-    } else
-    if(sVariable == ">=") {
-        if(dValL >= dValR) {
-            *pReturn = EVAL_TRUE;
-        } else {
-            *pReturn = EVAL_FALSE;
-        }
-        isValid = true;
-    } else
-    if(sVariable == "<=") {
-        if(dValL <= dValR) {
-            *pReturn = EVAL_TRUE;
-        } else {
-            *pReturn = EVAL_FALSE;
-        }
-        isValid = true;
-    } else
-    if(sVariable == "!=" || sVariable == "<>") {
-        if(dValL != dValR) {
-            *pReturn = EVAL_TRUE;
-        } else {
-            *pReturn = EVAL_FALSE;
-        }
-        isValid = true;
-    }
-
-    return isValid;
-}
-
-// ****************************************************************************************************************************** //
-
-/**
- *  Function :: evalMath
- * ======================
- *  Evaluate math operator
- */
-
-bool Math::evalMath(string_t sVariable, bool isUnary, vdouble_t* pStack, double_t* pReturn) {
-
-    bool isValid = false;
-
-    if(sVariable == "+" && isUnary) {
-        if(pStack->size() < 1) return false;
-        double_t dVal  = pStack->back(); pStack->pop_back();
-        *pReturn       = dVal;
-        isValid        = true;
-    } else
-    if(sVariable == "-" && isUnary) {
-        if(pStack->size() < 1) return false;
-        double_t dVal  = pStack->back(); pStack->pop_back();
-        *pReturn       = -dVal;
-        isValid        = true;
-    } else
-    if(sVariable == "+" && !isUnary) {
-        if(pStack->size() < 2) return false;
-        double_t dValR = pStack->back(); pStack->pop_back();
-        double_t dValL = pStack->back(); pStack->pop_back();
-        *pReturn       = dValL + dValR;
-        isValid        = true;
-    } else
-    if(sVariable == "-" && !isUnary) {
-        if(pStack->size() < 2) return false;
-        double_t dValR = pStack->back(); pStack->pop_back();
-        double_t dValL = pStack->back(); pStack->pop_back();
-        *pReturn       = dValL - dValR;
-        isValid        = true;
-    } else
-    if(sVariable == "*") {
-        if(pStack->size() < 2) return false;
-        double_t dValR = pStack->back(); pStack->pop_back();
-        double_t dValL = pStack->back(); pStack->pop_back();
-        *pReturn       = dValL * dValR;
-        isValid        = true;
-    } else
-    if(sVariable == "/") {
-        if(pStack->size() < 2) return false;
-        double_t dValR = pStack->back(); pStack->pop_back();
-        double_t dValL = pStack->back(); pStack->pop_back();
-        *pReturn       = dValL / dValR;
-        isValid        = true;
-    } else
-    if(sVariable == "^") {
-        if(pStack->size() < 2) return false;
-        double_t dValR = pStack->back(); pStack->pop_back();
-        double_t dValL = pStack->back(); pStack->pop_back();
-        *pReturn       = pow(dValL,dValR);
-        isValid        = true;
-    }
-
-    return isValid;
 }
 
 // ****************************************************************************************************************************** //

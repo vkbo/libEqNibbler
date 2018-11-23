@@ -71,14 +71,9 @@
 #define EVAL_END          31
 
 // Includes
-// #include <cstdlib>
-// #include <cstdint>
 #include <iostream>
 #include <cmath>
-// #include <cstring>
-// #include <array>
 #include <vector>
-// #include <cctype>
 
 // TypeDefs
 typedef std::vector<std::string> vstring_t;
@@ -133,31 +128,16 @@ private:
     bool    eqLexer();
     bool    eqParser();
 
-    value_t validUnary(string_t*);
     value_t validWord(string_t*);
-    value_t validNumber(string_t*, double_t*);
-    value_t validSeparator(string_t*);
 
     void    precedenceLogical(string_t, int32_t*, int32_t*);
     void    precedenceMath(string_t, bool, int32_t*, int32_t*);
-
-    bool    evalVariable(string_t, vdouble_t*, double_t*);
-    bool    evalConstant(string_t, double_t*);
-    bool    evalFunction(string_t, vdouble_t*, double_t*);
-    bool    evalLogical(string_t, vdouble_t*, double_t*);
-    bool    evalMath(string_t, bool, vdouble_t*, double_t*);
 
    /**
     * Member Variables
     */
 
     bool               m_Parsed    = false;
-
-    const vstring_t    m_WFunc     = {"sin","cos","tan","exp","log","abs","mod","if"};
-    const vstring_t    m_WConst    = {"pi"};
-    const vstring_t    m_OLogical  = {"&&","||","==","<",">",">=","<=","!=","<>"};
-    const vstring_t    m_OMath     = {"+","-","*","/","^"};
-    const vstring_t    m_OUnary    = {"+","-"};
 
     string_t           m_Equation;
     vstring_t          m_WVariable;
