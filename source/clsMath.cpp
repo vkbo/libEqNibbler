@@ -82,69 +82,69 @@ bool Math::Eval(vdouble_t vdValues, double_t* pReturn) {
 
         switch(tItem.type) {
 
-            case MP_NUMBER:
-                vdStack.push_back(tItem.value);
-                break;
+        case MP_NUMBER:
+            vdStack.push_back(tItem.value);
+            break;
 
-            case MP_VARIABLE:
-                dValue = 0.0;
-                if(evalVariable(tItem.content, &vdValues, &dValue)) {
-                    vdStack.push_back(dValue);
-                } else {
-                    printf("Math Eval Error: Unknown variable %s\n",tItem.content.c_str());
-                    return false;
-                }
-                break;
+        case MP_VARIABLE:
+            dValue = 0.0;
+            if(evalVariable(tItem.content, &vdValues, &dValue)) {
+                vdStack.push_back(dValue);
+            } else {
+                printf("Math Eval Error: Unknown variable %s\n",tItem.content.c_str());
+                return false;
+            }
+            break;
 
-            case MP_CONST:
-                dValue = 0.0;
-                if(evalConstant(tItem.content, &dValue)) {
-                    vdStack.push_back(dValue);
-                } else {
-                    printf("Math Eval Error: Unknown constant %s\n",tItem.content.c_str());
-                    return false;
-                }
-                break;
+        case MP_CONST:
+            dValue = 0.0;
+            if(evalConstant(tItem.content, &dValue)) {
+                vdStack.push_back(dValue);
+            } else {
+                printf("Math Eval Error: Unknown constant %s\n",tItem.content.c_str());
+                return false;
+            }
+            break;
 
-            case MP_FUNC:
-                dValue = 0.0;
-                if(evalFunction(tItem.content, &vdStack, &dValue)) {
-                    vdStack.push_back(dValue);
-                } else {
-                    printf("Math Eval Error: Unknown function %s\n",tItem.content.c_str());
-                    return false;
-                }
-                break;
+        case MP_FUNC:
+            dValue = 0.0;
+            if(evalFunction(tItem.content, &vdStack, &dValue)) {
+                vdStack.push_back(dValue);
+            } else {
+                printf("Math Eval Error: Unknown function %s\n",tItem.content.c_str());
+                return false;
+            }
+            break;
 
-            case MP_LOGICAL:
-                dValue = 0.0;
-                if(evalLogical(tItem.content, &vdStack, &dValue)) {
-                    vdStack.push_back(dValue);
-                } else {
-                    printf("Math Eval Error: Unknown logic operator %s\n",tItem.content.c_str());
-                    return false;
-                }
-                break;
+        case MP_LOGICAL:
+            dValue = 0.0;
+            if(evalLogical(tItem.content, &vdStack, &dValue)) {
+                vdStack.push_back(dValue);
+            } else {
+                printf("Math Eval Error: Unknown logic operator %s\n",tItem.content.c_str());
+                return false;
+            }
+            break;
 
-            case MP_MATH:
-                dValue = 0.0;
-                if(evalMath(tItem.content, false, &vdStack, &dValue)) {
-                    vdStack.push_back(dValue);
-                } else {
-                    printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
-                    return false;
-                }
-                break;
+        case MP_MATH:
+            dValue = 0.0;
+            if(evalMath(tItem.content, false, &vdStack, &dValue)) {
+                vdStack.push_back(dValue);
+            } else {
+                printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
+                return false;
+            }
+            break;
 
-            case MP_UNARY:
-                dValue = 0.0;
-                if(evalMath(tItem.content, true, &vdStack, &dValue)) {
-                    vdStack.push_back(dValue);
-                } else {
-                    printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
-                    return false;
-                }
-                break;
+        case MP_UNARY:
+            dValue = 0.0;
+            if(evalMath(tItem.content, true, &vdStack, &dValue)) {
+                vdStack.push_back(dValue);
+            } else {
+                printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
+                return false;
+            }
+            break;
         }
 
 #ifdef DEBUG
@@ -178,7 +178,7 @@ bool Math::eqLexer() {
     vector<token> vTokens;
 
 #ifdef DEBUG
-    printf("DEBUG> Calling Lexer\n");
+    printf("DEBUG> Calling eqLexer\n");
     printf("DEBUG>  * Equation: '%s'\n", m_Equation.c_str());
 #endif
 
@@ -233,26 +233,26 @@ bool Math::eqLexer() {
         double_t dValue = 0.0;
 
         switch(tItem.type) {
-            case MT_OPERATOR:
-                idType = validOperator(&tItem.content);
-                dValue = 0.0;
-                break;
-            case MT_UNARYOP:
-                idType = validUnary(&tItem.content);
-                dValue = 0.0;
-                break;
-            case MT_NUMBER:
-                idType = validNumber(&tItem.content, &tItem.value);
-                dValue = tItem.value;
-                break;
-            case MT_WORD:
-                idType = validWord(&tItem.content);
-                dValue = 0.0;
-                break;
-            case MT_SEPARATOR:
-                idType = validSeparator(&tItem.content);
-                dValue = 0.0;
-                break;
+        case MT_OPERATOR:
+            idType = validOperator(&tItem.content);
+            dValue = 0.0;
+            break;
+        case MT_UNARYOP:
+            idType = validUnary(&tItem.content);
+            dValue = 0.0;
+            break;
+        case MT_NUMBER:
+            idType = validNumber(&tItem.content, &tItem.value);
+            dValue = tItem.value;
+            break;
+        case MT_WORD:
+            idType = validWord(&tItem.content);
+            dValue = 0.0;
+            break;
+        case MT_SEPARATOR:
+            idType = validSeparator(&tItem.content);
+            dValue = 0.0;
+            break;
         }
 
         if( idType == MP_INVALID || (idType == idPrev && !(
@@ -300,7 +300,7 @@ bool Math::eqParser() {
     vector<token> vtStack;
 
 #ifdef DEBUG
-    printf("DEBUG> Calling Parser using Shunting-Yard Algorithm\n");
+    printf("DEBUG> Calling eqParser using Shunting-Yard algorithm\n");
     uint32_t nStep = 0;
 #endif
 
@@ -315,189 +315,189 @@ bool Math::eqParser() {
 
         switch(tItem.type) {
 
-            case MP_NUMBER:
-                vtOutput.push_back(tItem);
-                break;
+        case MP_NUMBER:
+            vtOutput.push_back(tItem);
+            break;
 
-            case MP_VARIABLE:
-                vtOutput.push_back(tItem);
-                break;
+        case MP_VARIABLE:
+            vtOutput.push_back(tItem);
+            break;
 
-            case MP_CONST:
-                vtOutput.push_back(tItem);
-                break;
+        case MP_CONST:
+            vtOutput.push_back(tItem);
+            break;
 
-            case MP_FUNC:
-                vtStack.insert(vtStack.begin(), tItem);
-                break;
+        case MP_FUNC:
+            vtStack.insert(vtStack.begin(), tItem);
+            break;
 
-            case MP_LOGICAL:
-                iErase = 0;
+        case MP_LOGICAL:
+            iErase = 0;
 
-                precedenceLogical(tItem.content,&itemPrec,&itemAssoc);
-                for(auto tStack : vtStack) {
-                    precedenceLogical(tStack.content,&stackPrec,&stackAssoc);
-                    if( tStack.type == MP_MATH &&
-                        ( (itemAssoc == ASSOC_L && itemPrec <= stackPrec) ||
-                          (itemAssoc == ASSOC_R && itemPrec <  stackPrec) ) ) {
-                        vtOutput.push_back(tStack);
-                        iErase++;
-                    } else {
-                        break;
-                    }
-                }
-
-                if(iErase > 0) {
-                    vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
-                }
-                vtStack.insert(vtStack.begin(), tItem);
-
-                break;
-
-            case MP_MATH:
-                iErase = 0;
-
-                precedenceMath(tItem.content,false,&itemPrec,&itemAssoc);
-                for(auto tStack : vtStack) {
-                    precedenceMath(tStack.content,false,&stackPrec,&stackAssoc);
-                    if( (tStack.type == MP_MATH || tStack.type == MP_UNARY) &&
-                        ( (itemAssoc == ASSOC_L && itemPrec <= stackPrec) ||
-                          (itemAssoc == ASSOC_R && itemPrec <  stackPrec) ) ) {
-                        vtOutput.push_back(tStack);
-                        iErase++;
-                    } else {
-                        break;
-                    }
-                }
-
-                if(iErase > 0) {
-                    vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
-                }
-                vtStack.insert(vtStack.begin(), tItem);
-
-                break;
-
-            case MP_UNARY:
-                iErase = 0;
-
-                precedenceMath(tItem.content,true,&itemPrec,&itemAssoc);
-                for(auto tStack : vtStack) {
-                    precedenceMath(tStack.content,true,&stackPrec,&stackAssoc);
-                    if( (tStack.type == MP_MATH || tStack.type == MP_UNARY) &&
-                        ( (itemAssoc == ASSOC_L && itemPrec <= stackPrec) ||
-                          (itemAssoc == ASSOC_R && itemPrec <  stackPrec) ) ) {
-                        vtOutput.push_back(tStack);
-                        iErase++;
-                    } else {
-                        break;
-                    }
-                }
-
-                if(iErase > 0) {
-                    vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
-                }
-                vtStack.insert(vtStack.begin(), tItem);
-
-                break;
-
-            case MP_LBRACK:
-                vtStack.insert(vtStack.begin(), tItem);
-                break;
-
-            case MP_RBRACK:
-                iErase   = 0;
-                isClosed = false;
-
-                for(auto tStack : vtStack) {
-                    if(tStack.type != MP_LBRACK) {
-                        vtOutput.push_back(tStack);
-                        iErase++;
-                    } else {
-                        isClosed = true;
-                        break;
-                    }
-                }
-
-                if(iErase > 0) {
-                    vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
-                }
-
-                // Check if brackets were closed
-                if(isClosed) {
-                    vtStack.erase(vtStack.begin());
+            precedenceLogical(tItem.content,&itemPrec,&itemAssoc);
+            for(auto tStack : vtStack) {
+                precedenceLogical(tStack.content,&stackPrec,&stackAssoc);
+                if( tStack.type == MP_MATH &&
+                    ( (itemAssoc == ASSOC_L && itemPrec <= stackPrec) ||
+                        (itemAssoc == ASSOC_R && itemPrec <  stackPrec) ) ) {
+                    vtOutput.push_back(tStack);
+                    iErase++;
                 } else {
-                    printf("Math Error: Paranthesis mismatch\n");
-                    return false;
+                    break;
                 }
+            }
 
-                // Check if the next token on stack is a function
-                if(vtStack.front().type == MP_FUNC) {
-                    vtOutput.push_back(vtStack.front());
-                    vtStack.erase(vtStack.begin());
+            if(iErase > 0) {
+                vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
+            }
+            vtStack.insert(vtStack.begin(), tItem);
+
+            break;
+
+        case MP_MATH:
+            iErase = 0;
+
+            precedenceMath(tItem.content,false,&itemPrec,&itemAssoc);
+            for(auto tStack : vtStack) {
+                precedenceMath(tStack.content,false,&stackPrec,&stackAssoc);
+                if( (tStack.type == MP_MATH || tStack.type == MP_UNARY) &&
+                    ( (itemAssoc == ASSOC_L && itemPrec <= stackPrec) ||
+                        (itemAssoc == ASSOC_R && itemPrec <  stackPrec) ) ) {
+                    vtOutput.push_back(tStack);
+                    iErase++;
+                } else {
+                    break;
                 }
+            }
 
-                break;
+            if(iErase > 0) {
+                vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
+            }
+            vtStack.insert(vtStack.begin(), tItem);
 
-            case MP_COMMA:
-                iErase   = 0;
-                isClosed = false;
+            break;
+
+        case MP_UNARY:
+            iErase = 0;
+
+            precedenceMath(tItem.content,true,&itemPrec,&itemAssoc);
+            for(auto tStack : vtStack) {
+                precedenceMath(tStack.content,true,&stackPrec,&stackAssoc);
+                if( (tStack.type == MP_MATH || tStack.type == MP_UNARY) &&
+                    ( (itemAssoc == ASSOC_L && itemPrec <= stackPrec) ||
+                        (itemAssoc == ASSOC_R && itemPrec <  stackPrec) ) ) {
+                    vtOutput.push_back(tStack);
+                    iErase++;
+                } else {
+                    break;
+                }
+            }
+
+            if(iErase > 0) {
+                vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
+            }
+            vtStack.insert(vtStack.begin(), tItem);
+
+            break;
+
+        case MP_LBRACK:
+            vtStack.insert(vtStack.begin(), tItem);
+            break;
+
+        case MP_RBRACK:
+            iErase   = 0;
+            isClosed = false;
+
+            for(auto tStack : vtStack) {
+                if(tStack.type != MP_LBRACK) {
+                    vtOutput.push_back(tStack);
+                    iErase++;
+                } else {
+                    isClosed = true;
+                    break;
+                }
+            }
+
+            if(iErase > 0) {
+                vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
+            }
+
+            // Check if brackets were closed
+            if(isClosed) {
+                vtStack.erase(vtStack.begin());
+            } else {
+                printf("Math Error: Paranthesis mismatch\n");
+                return false;
+            }
+
+            // Check if the next token on stack is a function
+            if(vtStack.front().type == MP_FUNC) {
+                vtOutput.push_back(vtStack.front());
+                vtStack.erase(vtStack.begin());
+            }
+
+            break;
+
+        case MP_COMMA:
+            iErase   = 0;
+            isClosed = false;
+
+            for(auto tStack : vtStack) {
+                if(tStack.type != MP_LBRACK) {
+                    vtOutput.push_back(tStack);
+                    iErase++;
+                } else {
+                    isClosed = true;
+                    break;
+                }
+            }
+
+            if(iErase > 0) {
+                vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
+            }
+
+            break;
+
+        case MP_END:
+            iErase = 0;
+
+            if(vtStack.size() > 0) {
+                if( vtStack.front().type == MP_LBRACK ||
+                    vtStack.front().type == MP_RBRACK ) {
+                printf("Math Error: Paranthesis mismatch\n");
+                return false;
+                }
 
                 for(auto tStack : vtStack) {
-                    if(tStack.type != MP_LBRACK) {
-                        vtOutput.push_back(tStack);
-                        iErase++;
-                    } else {
-                        isClosed = true;
-                        break;
-                    }
+                    vtOutput.push_back(tStack);
+                    iErase++;
                 }
-
                 if(iErase > 0) {
                     vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
                 }
+            }
 
-                break;
-
-            case MP_END:
-                iErase = 0;
-
-                if(vtStack.size() > 0) {
-                    if( vtStack.front().type == MP_LBRACK ||
-                        vtStack.front().type == MP_RBRACK ) {
-                    printf("Math Error: Paranthesis mismatch\n");
-                    return false;
-                    }
-
-                    for(auto tStack : vtStack) {
-                        vtOutput.push_back(tStack);
-                        iErase++;
-                    }
-                    if(iErase > 0) {
-                        vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
-                    }
-                }
-
-                vtOutput.push_back(tItem);
-                m_ParseTree = vtOutput;
+            vtOutput.push_back(tItem);
+            m_ParseTree = vtOutput;
 
 #ifdef DEBUG
-                nStep++;
-                printf("DEBUG> Step %d\n", nStep);
-                printf("DEBUG>  * Current : %s\n", tItem.content.c_str());
-                printf("DEBUG>  * Stack   : ");
-                for(auto tTemp : vtStack) {
-                    printf("%s  ",tTemp.content.c_str());
-                }
-                printf("\n");
-                printf("DEBUG>  * Output  : ");
-                for(auto tTemp : vtOutput) {
-                    printf("%s  ",tTemp.content.c_str());
-                }
-                printf("\n");
+            nStep++;
+            printf("DEBUG> Step %d\n", nStep);
+            printf("DEBUG>  * Current : %s\n", tItem.content.c_str());
+            printf("DEBUG>  * Stack   : ");
+            for(auto tTemp : vtStack) {
+                printf("%s  ",tTemp.content.c_str());
+            }
+            printf("\n");
+            printf("DEBUG>  * Output  : ");
+            for(auto tTemp : vtOutput) {
+                printf("%s  ",tTemp.content.c_str());
+            }
+            printf("\n");
 #endif
 
-                return true;
-                break;
+            return true;
+            break;
         }
 
 #ifdef DEBUG
