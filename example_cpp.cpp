@@ -18,8 +18,8 @@ int main(int argc, char const *argv[]) {
     vector<string>   theVars{"x"};
     vector<double_t> theVals{1.0};
 
-    // size_t idEQ = theEQ->addEquation("-sin(x)*1e2 + (+5e+1)",theVars);
-    size_t idEQ = theEQ->addEquation("-1.0 + x + cos(0)",theVars);
+    size_t idEQ = theEQ->addEquation("-sin(x)*1e2 + (+5e+1)",theVars);
+    // size_t idEQ = theEQ->addEquation("-if(x >= 1, 1, 0)",theVars);
 
     double_t theResult = theEQ->evalEquation(idEQ, theVals);
 

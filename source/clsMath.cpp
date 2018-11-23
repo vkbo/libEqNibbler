@@ -257,7 +257,7 @@ bool Math::eqLexer() {
 
         if( idType == MP_INVALID || (idType == idPrev && !(
             idType == MP_LBRACK || idType == MP_RBRACK ))) {
-            printf("Math Error: Unknown item '%s'\n", tItem.content.c_str());
+            printf("Math Error: Cannot parse token '%s'\n", tItem.content.c_str());
             return false;
         } else {
             m_Tokens.push_back(token({idType, tItem.content, dValue}));
@@ -461,18 +461,20 @@ bool Math::eqParser() {
             case MP_END:
                 iErase = 0;
 
-                if( vtStack.front().type == MP_LBRACK ||
-                    vtStack.front().type == MP_RBRACK ) {
-                   printf("Math Error: Paranthesis mismatch\n");
-                   return false;
-                }
+                if(vtStack.size() > 0) {
+                    if( vtStack.front().type == MP_LBRACK ||
+                        vtStack.front().type == MP_RBRACK ) {
+                    printf("Math Error: Paranthesis mismatch\n");
+                    return false;
+                    }
 
-                for(auto tStack : vtStack) {
-                    vtOutput.push_back(tStack);
-                    iErase++;
-                }
-                if(iErase > 0) {
-                    vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
+                    for(auto tStack : vtStack) {
+                        vtOutput.push_back(tStack);
+                        iErase++;
+                    }
+                    if(iErase > 0) {
+                        vtStack.erase(vtStack.begin(),vtStack.begin()+iErase);
+                    }
                 }
 
                 vtOutput.push_back(tItem);
