@@ -111,7 +111,6 @@ private:
     bool    evalConstant(string_t, double_t*);
     bool    evalFunction(string_t, vdouble_t*, double_t*);
     bool    evalLogical(string_t, vdouble_t*, double_t*);
-    bool    evalMath(string_t, bool, vdouble_t*, double_t*);
 
    /**
     * Member Variables

@@ -67,6 +67,15 @@ bool Math::Eval(vdouble_t vdValues, double_t* pReturn) {
 
     vdouble_t vdStack;
     double_t  dValue;
+    bool      isValid;
+
+#ifdef DEBUG
+    printf("DEBUG> Evaluating Equation\n");
+    for(size_t i=0; i<m_WVariable.size(); i++) {
+        printf("DEBUG>  * %-5s = %10.3e\n", m_WVariable[i].c_str(), vdValues[i]);
+    }
+    printf("DEBUG> Computing\n");
+#endif
 
     if(!m_Parsed) {
         printf("Math Eval Error: No valid equation to evaluate\n");
@@ -127,28 +136,54 @@ bool Math::Eval(vdouble_t vdValues, double_t* pReturn) {
             break;
 
         case MP_MATH:
-            dValue = 0.0;
-            if(evalMath(tItem.content, false, &vdStack, &dValue)) {
-                vdStack.push_back(dValue);
+            if(vdStack.size() >= 2) {
+                double_t dValR = vdStack.back(); vdStack.pop_back();
+                double_t dValL = vdStack.back(); vdStack.pop_back();
+                if(tItem.content == "+") {
+                    vdStack.push_back(dValL + dValR);
+                } else
+                if(tItem.content == "-") {
+                    vdStack.push_back(dValL - dValR);
+                } else
+                if(tItem.content == "*") {
+                    vdStack.push_back(dValL * dValR);
+                } else
+                if(tItem.content == "/") {
+                    vdStack.push_back(dValL / dValR);
+                } else
+                if(tItem.content == "^") {
+                    vdStack.push_back(pow(dValL,dValR));
+                } else {
+                    printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
+                    return false;
+                }
             } else {
-                printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
+                printf("Math Eval Error: Operator %s requires two expressions\n",tItem.content.c_str());
                 return false;
             }
             break;
 
         case MP_UNARY:
-            dValue = 0.0;
-            if(evalMath(tItem.content, true, &vdStack, &dValue)) {
-                vdStack.push_back(dValue);
+            if(vdStack.size() >= 1) {
+                double_t dVal = vdStack.back(); vdStack.pop_back();
+                if(tItem.content == "+") {
+                    vdStack.push_back(dVal);
+                } else
+                if(tItem.content == "-") {
+                    vdStack.push_back(-dVal);
+                } else {
+                    printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
+                    return false;
+                }
             } else {
-                printf("Math Eval Error: Unknown operator %s\n",tItem.content.c_str());
+                printf("Math Eval Error: Operator %s requires one expression\n",tItem.content.c_str());
                 return false;
             }
             break;
         }
 
 #ifdef DEBUG
-        printf("DEBUG> Stack: ");
+        printf("DEBUG>  * Stack: ");
         for(auto dValue : vdStack) {
             printf("%10.3e | ", dValue);
         }
@@ -178,7 +213,7 @@ bool Math::eqLexer() {
     vector<token> vTokens;
 
 #ifdef DEBUG
-    printf("DEBUG> Calling eqLexer\n");
+    printf("DEBUG> This is eqLexer\n");
     printf("DEBUG>  * Equation: '%s'\n", m_Equation.c_str());
 #endif
 
@@ -255,8 +290,7 @@ bool Math::eqLexer() {
             break;
         }
 
-        if( idType == MP_INVALID || (idType == idPrev && !(
-            idType == MP_LBRACK || idType == MP_RBRACK ))) {
+        if(idType == MP_INVALID || (idType == idPrev && !(idType == MP_LBRACK || idType == MP_RBRACK ))) {
             printf("Math Error: Cannot parse token '%s'\n", tItem.content.c_str());
             return false;
         } else {
@@ -266,12 +300,18 @@ bool Math::eqLexer() {
         idPrev = idType;
     }
 
+    // Check that we actually have something
+    if(m_Tokens.size() == 0) {
+        printf("Math Error: No equation\n");
+        return false;
+    }
+
     // Add end token
     m_Tokens.push_back(token({MP_END, "end", 0.0}));
 
 #ifdef DEBUG
     // Echo lexer for debug
-    printf("DEBUG> End of Lexer\n");
+    printf("DEBUG> Lexer result:\n");
     size_t lIdx = 0;
     for(auto tItem : m_Tokens) {
         lIdx++;
@@ -300,7 +340,7 @@ bool Math::eqParser() {
     vector<token> vtStack;
 
 #ifdef DEBUG
-    printf("DEBUG> Calling eqParser using Shunting-Yard algorithm\n");
+    printf("DEBUG> This is eqParser using Shunting-Yard algorithm\n");
     uint32_t nStep = 0;
 #endif
 
@@ -928,69 +968,6 @@ bool Math::evalLogical(string_t sVariable, vdouble_t* pStack, double_t* pReturn)
             *pReturn = EVAL_FALSE;
         }
         isValid = true;
-    }
-
-    return isValid;
-}
-
-// ****************************************************************************************************************************** //
-
-/**
- *  Function :: evalMath
- * ======================
- *  Evaluate math operator
- */
-
-bool Math::evalMath(string_t sVariable, bool isUnary, vdouble_t* pStack, double_t* pReturn) {
-
-    bool isValid = false;
-
-    if(sVariable == "+" && isUnary) {
-        if(pStack->size() < 1) return false;
-        double_t dVal  = pStack->back(); pStack->pop_back();
-        *pReturn       = dVal;
-        isValid        = true;
-    } else
-    if(sVariable == "-" && isUnary) {
-        if(pStack->size() < 1) return false;
-        double_t dVal  = pStack->back(); pStack->pop_back();
-        *pReturn       = -dVal;
-        isValid        = true;
-    } else
-    if(sVariable == "+" && !isUnary) {
-        if(pStack->size() < 2) return false;
-        double_t dValR = pStack->back(); pStack->pop_back();
-        double_t dValL = pStack->back(); pStack->pop_back();
-        *pReturn       = dValL + dValR;
-        isValid        = true;
-    } else
-    if(sVariable == "-" && !isUnary) {
-        if(pStack->size() < 2) return false;
-        double_t dValR = pStack->back(); pStack->pop_back();
-        double_t dValL = pStack->back(); pStack->pop_back();
-        *pReturn       = dValL - dValR;
-        isValid        = true;
-    } else
-    if(sVariable == "*") {
-        if(pStack->size() < 2) return false;
-        double_t dValR = pStack->back(); pStack->pop_back();
-        double_t dValL = pStack->back(); pStack->pop_back();
-        *pReturn       = dValL * dValR;
-        isValid        = true;
-    } else
-    if(sVariable == "/") {
-        if(pStack->size() < 2) return false;
-        double_t dValR = pStack->back(); pStack->pop_back();
-        double_t dValL = pStack->back(); pStack->pop_back();
-        *pReturn       = dValL / dValR;
-        isValid        = true;
-    } else
-    if(sVariable == "^") {
-        if(pStack->size() < 2) return false;
-        double_t dValR = pStack->back(); pStack->pop_back();
-        double_t dValL = pStack->back(); pStack->pop_back();
-        *pReturn       = pow(dValL,dValR);
-        isValid        = true;
     }
 
     return isValid;
