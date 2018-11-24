@@ -32,6 +32,9 @@ if(32BIT AND 64BIT)
   set(64BIT OFF)
   message(STATUS "32bit build selected, disabling 64bit option.")
 endif()
+if(PYTHON_INTERFACE AND STATIC)
+  message(FATAL_ERROR "The Python interface requires a shared library. Static was requested.")
+endif()
 
 # Source Files
 set(EQN_SOURCES
@@ -92,39 +95,23 @@ if(DEBUG)
 endif()
 
 if(EXAMPLE_CPP)
-  add_executable(EX_CPP ${CMAKE_SOURCE_DIR}/example_cpp.cpp)
-  set_target_properties(EX_CPP PROPERTIES OUTPUT_NAME "example_cpp.e")
-  target_link_libraries(EX_CPP SimpleMathLib)
+  add_executable(ExampleCPP ${CMAKE_SOURCE_DIR}/example_cpp.cpp)
+  set_target_properties(ExampleCPP PROPERTIES OUTPUT_NAME "example_cpp.e")
+  target_link_libraries(ExampleCPP SimpleMathLib)
 endif()
 
 if(PYTHON_INTERFACE)
-  add_custom_target(PYTHON_INTERFACE)
-  add_custom_command(
-    TARGET PYTHON_INTERFACE POST_BUILD
-    COMMAND ${CMAKE_COMMAND} ARGS -E copy ${CMAKE_SOURCE_DIR}/interface/simple_math.py ${CMAKE_BINARY_DIR}/simple_math.py
-    COMMAND ${CMAKE_COMMAND} ARGS -E copy ${CMAKE_SOURCE_DIR}/interface/test.py ${CMAKE_BINARY_DIR}/test.py
-  )
-  add_dependencies(SimpleMathLib PYTHON_INTERFACE)
+  list(APPEND PYTHON_FILES simple_math.py test.py)
+  add_custom_target(PythonInterface DEPENDS ${PYTHON_FILES})
+  add_dependencies(SimpleMathLib PythonInterface)
+  foreach(pyfile IN ITEMS ${PYTHON_FILES})
+    message(STATUS "Will copy Python script ${pyfile}")
+    add_custom_command(
+      OUTPUT  ${pyfile}
+      COMMAND ${CMAKE_COMMAND} ARGS -E copy ${CMAKE_SOURCE_DIR}/interface/${pyfile} ${CMAKE_CURRENT_BINARY_DIR}/${pyfile}
+      DEPENDS ${CMAKE_SOURCE_DIR}/interface/${pyfile}
+      COMMENT "Copying Python script ${pyfile}"
+      VERBATIM
+    )
+  endforeach()
 endif()
-
-# if(PYTHON_INTERFACE)
-#   set(Python_ADDITIONAL_VERSIONS 3.4)
-#   find_package(PythonLibs 3 REQUIRED)
-#   if(PYTHONLIBS_FOUND)
-#     message(STATUS "Python3 include dirs: ${PYTHON_INCLUDE_DIRS}")
-#     add_library(IF_PYTHON SHARED ${CMAKE_SOURCE_DIR}/interface/python_interface.cpp)
-#     include_directories(${PYTHON_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/source)
-#     target_link_libraries(IF_PYTHON ${PYTHON_LIBRARIES})
-#     set_target_properties(IF_PYTHON PROPERTIES OUTPUT_NAME "simple_math")
-#     set_target_properties(IF_PYTHON PROPERTIES PREFIX "")
-#     set_target_properties(IF_PYTHON PROPERTIES LINKER_LANGUAGE CXX)
-#     add_custom_target(IF_PYTHON_TEST)
-#     add_custom_command(
-#       TARGET IF_PYTHON_TEST POST_BUILD
-#       COMMAND ${CMAKE_COMMAND} ARGS -E copy ${CMAKE_SOURCE_DIR}/interface/test.py ${CMAKE_BINARY_DIR}/test.py
-#     )
-#     add_dependencies(IF_PYTHON IF_PYTHON_TEST)
-#   else()
-#     message(FATAL_ERROR "Python3 dev libraries not found")
-#   endif()
-# endif()

@@ -10,7 +10,7 @@
 #include "source/libSimpleMath.hpp"
 
 using namespace std;
-using namespace eqnibbler;
+using namespace smath;
 
 int main(int argc, char const *argv[]) {
 
