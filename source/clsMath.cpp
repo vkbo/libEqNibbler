@@ -1,6 +1,11 @@
 /**
- *  ReyPIC – Math Class Source
- * ============================
+ *  Equation Nibbler Library
+ * ==========================
+ *  A math function parser using a reverse polish notation algorithm.
+ *  Loosely based on: http://www.codeproject.com/Articles/345888/How-to-write-a-simple-interpreter-in-JavaScript
+ * 
+ *  ToDo: Merge precedence of math and logical. See:
+ *        https://www.bouraspage.com/repository/algorithmic-thinking/what-is-the-order-of-precedence-of-arithmetic-comparison-and-logical-operators
  */
 
 #include "clsMath.hpp"
