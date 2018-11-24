@@ -261,7 +261,7 @@ bool Math::Eval(vdouble_t vdValues, double_t* pReturn) {
             dValL = vdStack.back(); vdStack.pop_back();
             dVal  = vdStack.back(); vdStack.pop_back();
             if(tItem.eval == EVAL_SPECIAL_IF) {
-                if(dVal == EVAL_TRUE) {
+                if(dVal != EVAL_FALSE) {
                     vdStack.push_back(dValL);
                 } else {
                     vdStack.push_back(dValR);
