@@ -7,7 +7,7 @@
 
 #include "clsMath.hpp"
 
-namespace eqnibbler {
+namespace smath {
 
 class SimpleMath {
 

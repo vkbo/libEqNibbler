@@ -8,7 +8,7 @@
 #include "libSimpleMath.hpp"
 
 using namespace std;
-using namespace eqnibbler;
+using namespace smath;
 
 SimpleMath::SimpleMath() {
 

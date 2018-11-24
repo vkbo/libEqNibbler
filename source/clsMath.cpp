@@ -11,7 +11,7 @@
 #include "clsMath.hpp"
 
 using namespace std;
-using namespace eqnibbler;
+using namespace smath;
 
 // ****************************************************************************************************************************** //
 

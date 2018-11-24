@@ -80,7 +80,7 @@ typedef std::vector<double_t>    vdouble_t;
 typedef std::string              string_t;
 typedef int32_t                  value_t;
 
-namespace eqnibbler {
+namespace smath {
 
 struct token {
     value_t  type;
