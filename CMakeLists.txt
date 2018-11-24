@@ -1,8 +1,8 @@
 #
-# Equation Nibbler Library Build Script
+# Simple Math Parser Library Build Script
 #
 
-project(EquationNibbler)
+project(SimpleMathParser)
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 # Some Checks
@@ -34,8 +34,8 @@ endif()
 
 # Source Files
 set(EQN_SOURCES
-  ${CMAKE_SOURCE_DIR}/source/libEqNibbler.hpp
-  ${CMAKE_SOURCE_DIR}/source/libEqNibbler.cpp
+  ${CMAKE_SOURCE_DIR}/source/libSimpleMath.hpp
+  ${CMAKE_SOURCE_DIR}/source/libSimpleMath.cpp
   ${CMAKE_SOURCE_DIR}/source/clsMath.hpp
   ${CMAKE_SOURCE_DIR}/source/clsMath.cpp
 )
@@ -77,18 +77,18 @@ else()
 endif()
 
 if(STATIC)
-  add_library(EqNibblerLib STATIC ${EQN_SOURCES})
+  add_library(SimpleMathLib STATIC ${EQN_SOURCES})
 else()
-  add_library(EqNibblerLib STATIC ${EQN_SOURCES})
+  add_library(SimpleMathLib STATIC ${EQN_SOURCES})
 endif()
-set_target_properties(EqNibblerLib PROPERTIES OUTPUT_NAME "EqNibbler")
-set_target_properties(EqNibblerLib PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(SimpleMathLib PROPERTIES OUTPUT_NAME "SimpleMath")
+set_target_properties(SimpleMathLib PROPERTIES LINKER_LANGUAGE CXX)
 if(DEBUG)
-  target_compile_definitions(EqNibblerLib PUBLIC DEBUG=1)
+  target_compile_definitions(SimpleMathLib PUBLIC DEBUG=1)
 endif()
 
 if(EXAMPLE_CPP)
-  add_executable(EqNEx_CPP ${CMAKE_SOURCE_DIR}/example_cpp.cpp)
-  set_target_properties(EqNEx_CPP PROPERTIES OUTPUT_NAME "example_cpp.e")
-  target_link_libraries(EqNEx_CPP EqNibblerLib)
+  add_executable(EX_CPP ${CMAKE_SOURCE_DIR}/example_cpp.cpp)
+  set_target_properties(EX_CPP PROPERTIES OUTPUT_NAME "example_cpp.e")
+  target_link_libraries(EX_CPP SimpleMathLib)
 endif()

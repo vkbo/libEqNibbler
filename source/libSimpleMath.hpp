@@ -9,12 +9,12 @@
 
 namespace eqnibbler {
 
-class EquationNibbler {
+class SimpleMath {
 
     public:
 
-    EquationNibbler();
-    ~EquationNibbler();
+    SimpleMath();
+    ~SimpleMath();
 
     size_t   addEquation(string_t, vstring_t);
     double_t evalEquation(size_t, vdouble_t);

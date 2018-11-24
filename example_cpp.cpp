@@ -7,7 +7,7 @@
 #include <time.h>
 #include <cstdlib>
 
-#include "source/libEqNibbler.hpp"
+#include "source/libSimpleMath.hpp"
 
 using namespace std;
 using namespace eqnibbler;
@@ -15,7 +15,7 @@ using namespace eqnibbler;
 int main(int argc, char const *argv[]) {
 
     double_t theResult;
-    EquationNibbler* theEQ = new EquationNibbler();
+    SimpleMath* theEQ = new SimpleMath();
     clock_t tStart = clock();
     vector<string>   theVars{"a","x","y","z"};
     // size_t idEQ = theEQ->addEquation("-(1 + (2 + x)) + (3 + (4 + y)) + (5 + (6 + (7 + z)))",theVars);
